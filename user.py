@@ -95,11 +95,10 @@ class user:
                 res += "%s X %s\n" % (i['name'], i['num'])
             if 'campaignbonus' in data['response'][0]['success']:
                 for cp in data['response'][0]['success']['campaignbonus']:
-                    if 'banners' in cp['script']:
-                        res += '`*%s*\n*%s*\n%s\n`' % (
-                            cp['name'],
-                            cp['detail'],
-                            cp['script']['banners'][0]['bannerUrl']
+                    res += '`*%s*\n*%s*\n%s\n`' % (
+                        cp['name'],
+                        cp['detail'],
+                        cp['script']['banners'][0]['bannerUrl']
                     )
                     for i in cp['items']:
                         res += "%s X %s\n" % (i['name'], i['num'])
@@ -117,7 +116,7 @@ class user:
                 break
         svtCount = 0
         ceCount = 0
-        for svt in data['cache']['replaced']['userSvt']:
+        for svt in data['cache']['updated']['userSvt']:
             if str(svt['svtId']).startswith( '93' ) or str(svt['svtId']).startswith( '94' ) or str(svt['svtId']).startswith( '98' ) :
                 ceCount += 1
             else:
@@ -149,11 +148,10 @@ class user:
 
     def friendGacha(self):
         mstGachaSub = url.GetJsonFromUrl(url.MstDataUrl+"mstGachaSub.json")
-        gachaSubIdNow = 0
+        gachaSubIdNow = 1
         for gs in mstGachaSub :
-            if gs['gachaId'] == 1 and gs['openedAt'] < mytime.GetTimeStamp() and gs['closedAt'] > mytime.GetTimeStamp() and gs['commonReleaseId'] == 0 :
-                gachaSubIdNow = gs['id']
-                print("gachaSubId: %d " % gachaSubIdNow)
+            if gs[gachaId] == 1 and gs[openedAt] < mytime.GetTimeStamp() and gs[closedAt] > mytime.GetTimeStamp() and gs[commonReleaseId] == 0 :
+                gachaSubIdNow = gs[id]
         par = {
             'userId': self.userId,
             'authKey': self.authKey,
@@ -178,8 +176,6 @@ class user:
             res = '`友情點數召喚累計%s次\n\n`' % (
                 data['cache']['updated']['userGacha'][0]['num']
             )
-        else :
-            res = '無法進行友情點數召喚'
         return res
 
     def gameData(self):
