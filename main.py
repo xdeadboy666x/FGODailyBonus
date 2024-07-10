@@ -1,53 +1,51 @@
 import os
-import traceback
 import time
 import mytime
-import fgourl
+import fgourl as url
 from user import user
 
-userIds = os.environ['userIds'].split(',')
-authKeys = os.environ['authKeys'].split(',')
-secretKeys = os.environ['secretKeys'].split(',')
+userIds = os.environ['userIds'].split(",")
+authKeys = os.environ['authKeys'].split(",")
+secretKeys = os.environ['secretKeys'].split(",")
 
 userNums = len(userIds)
 authKeyNums = len(authKeys)
 secretKeyNums = len(secretKeys)
 
-fgourl.ver_code_ = os.environ['verCode']
-fgourl.TelegramBotToken = os.environ['TGBotToken']
-fgourl.TelegramAdminId = os.environ['TGAdminId']
-fgourl.github_token_ = os.environ['GithubToken']
-fgourl.github_name_ = os.environ['GithubName']
-fgourl.Pserver = os.environ['Pserver']
-fgourl.Puser = os.environ['Puser']
+url.verCode = os.environ['verCode']
+url.WebhookUrl = os.environ['WebhookUrl']
+url.TelegramBotToken = os.environ['TGBotToken']
+url.TelegramAdminId = os.environ['TGAdminId']
+url.GithubToken = os.environ['GithubToken']
+url.GithubName = os.environ['GithubName']
+url.MstDataUrl = os.environ['MstDataUrl']
 UA = os.environ['UserAgent']
 if UA != 'nullvalue':
-    fgourl.user_agent_ = UA
+    url.UserAgent = UA
 
 
 def main():
-#    fgourl.SendMessageToAdmin(f'铛铛铛( \`д´) *{mytime.GetNowTimeHour()}点* 了')
+    url.SendMessageToAdmin("鐺鐺鐺( \`д´) *%s點* 了" % mytime.GetNowTimeHour())
     if userNums == authKeyNums and userNums == secretKeyNums:
-        fgourl.ReadConf()
-        fgourl.gameData()
-        print(f'待签到: {userNums}个')
-        res = '【登录信息】\n'
+        url.ReadConf()
+        print("待簽到: %d 個" % userNums)
+        res = '【登入訊息】\n'
         for i in range(userNums):
-            try:
-                instance = user(userIds[i], authKeys[i], secretKeys[i])
-                time.sleep(3)
-                res += instance.topLogin()
+            instance = user(userIds[i], authKeys[i], secretKeys[i])
+            instance.gameData()
+            time.sleep(5)
+            res2 = instance.topLogin()
+            time.sleep(2)
+            instance.topHome()
+            if(instance.freeDraw):
                 time.sleep(2)
-                instance.topHome()
-                time.sleep(2)
-            except Exception as ex:
-                print(f'{i}th user login failed: {ex}')
-                traceback.print_exc()
-
-        fgourl.UploadFileToRepo(mytime.GetNowTimeFileName(), res, mytime.GetNowTimeFileName())
-        fgourl.SendMessageToAdmin(res)
+                res2 += instance.friendGacha()
+            res += res2
+            url.SendMessageToAdmin(res2)
+        url.UploadFileToRepo(mytime.GetNowTimeFileName(), res,
+                             mytime.GetNowTimeFileName())
     else:
-        print('账号密码数量不匹配')
+        print("帳號密碼數量不匹配")
 
 
 if __name__ == '__main__':
