@@ -39,4 +39,4 @@ jobs:
         WebhookUrl: ${{ secrets.DISCORD_WEBHOOK_URL }}
         Pserver: ${{ secrets.PSERVER }}
         Puser: ${{ secrets.PUSER }}
-        #MstDataUrl: ${{ secrets.GAME_DATA_FOLDER }}
+        MstDataUrl: ${{ secrets.GAME_DATA_FOLDER }}
