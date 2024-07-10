@@ -8,6 +8,7 @@ on:
     branches: [ master ]
   pull_request:
     branches: [ master ]
+  workflow_dispath:
   schedule:
     - cron: '30 19 * * *'
 
@@ -17,10 +18,10 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.8]
+        python-version: [3.11]
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@master
     - name: Test
       run: |
         python3 main.py
