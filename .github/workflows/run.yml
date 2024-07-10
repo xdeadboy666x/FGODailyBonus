@@ -24,6 +24,7 @@ jobs:
     - uses: actions/checkout@master
     - name: Test
       run: |
+        pip install -r requirements.txt
         python3 main.py
       env:
         userIds: ${{ secrets.GAME_USERIDS }}
@@ -36,4 +37,6 @@ jobs:
         GithubToken: ${{ secrets.VERY_IMPORTANT_TOKEN }}
         GithubName: ${{ secrets.VERY_IMPORTANT_NAME }}
         WebhookUrl: ${{ secrets.DISCORD_WEBHOOK_URL }}
-        MstDataUrl: ${{ secrets.GAME_DATA_FOLDER }}
+        Pserver: ${{ secrets.PSERVER }}
+        Puser: ${{ secrets.PUSER }}
+        #MstDataUrl: ${{ secrets.GAME_DATA_FOLDER }}
