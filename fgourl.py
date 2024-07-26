@@ -1,169 +1,72 @@
 import json
-import re
-import requests
-import mytime
 import binascii
-import base64
+import requests
+import version
+import main
 import CatAndMouseGame
+import os
 
-requests.packages.urllib3.disable_warnings()
+requests.urllib3.disable_warnings()
 session = requests.Session()
+session.verify = False
 
-#===== Game's arguments =====
-appVer = ''
-dateVer = 0
-verCode = ''
-assetbundleFolder = ''
-dataVer = 0
-dataServerFolderCrc = ''
-gameServerAddr = "https://game.fate-go.jp"
-GithubToken = ''
-GithubName = ''
-UserAgent = 'Dalvik/2.1.0 (Linux; U; Android 11; Pixel 5 Build/RD1A.201105.003.A1)'
-
-
-#==== User Info ====
-def ReadConf():
-    data = json.loads(
-        requests.get(
-            url=
-            f"https://github.com/{GithubName}/FGODailyBonusLog/raw/main/cfg.json"
-        ).text)
-    global appVer, dateVer, assetbundleFolder, dataVer, dataServerFolderCrc
-    appVer = data['global']['appVer']
-    dataVer = data['global']['dataVer']
-    dateVer = data['global']['dateVer']
-    assetbundleFolder = data['global']['assetbundleFolder']
-    dataServerFolderCrc = data['global']['dataServerFolderCrc']
+# ===== Game's parameters =====
+app_ver_ = ''
+data_ver_ = 0
+date_ver_ = 0
+ver_code_ = ''
+asset_bundle_folder_ = ''
+data_server_folder_crc_ = 0
+server_addr_ = 'https://game.fate-go.jp'
+github_token_ = ''
+github_name_ = ''
 
 
-def WriteConf(data):
-    UploadFileToRepo('cfg.json', data, "update config")
+# ==== User Info ====
+def set_latest_assets():
+    global app_ver_, data_ver_, date_ver_, asset_bundle_folder_, data_server_folder_crc_, ver_code_, server_addr_
+
+    region = main.fate_region
+
+    # Set Game Server Depends of region
+
+    if region == "NA":
+        server_addr_ = "https://game.fate-go.us"
+
+    # Get Latest Version of the data!
+    version_str = version.get_version(region)
+    response = requests.get(
+        server_addr_ + '/gamedata/top?appVer=' + version_str).text
+    response_data = json.loads(response)["response"][0]["success"]
+
+    # Set AppVer, DataVer, DateVer
+    app_ver_ = version_str
+    data_ver_ = response_data['dataVer']
+    date_ver_ = response_data['dateVer']
+    ver_code_ = main.get_latest_verCode()
+
+    # Use Asset Bundle Extractor to get Folder Name
+    assetbundle = CatAndMouseGame.getAssetBundle(response_data['assetbundle'])
+    get_folder_data(assetbundle)
 
 
-def UpdateBundleFolder(assetbundle):
-    new_assetbundle = CatAndMouseGame.MouseInfoMsgPack(
-        base64.b64decode(assetbundle))
-    print("new_assetbundle: %s" % new_assetbundle)
-    global assetbundleFolder, dataServerFolderCrc
-    assetbundleFolder = new_assetbundle
-    dataServerFolderCrc = binascii.crc32(new_assetbundle.encode('utf8'))
-    return 1
+def get_folder_data(assetbundle):
+    global asset_bundle_folder_, data_server_folder_crc_
 
+    asset_bundle_folder_ = assetbundle['folderName']
+    data_server_folder_crc_ = binascii.crc32(
+        assetbundle['folderName'].encode('utf8'))
 
-def UpdateAppVer(detail):
-    matchObj = re.match('.*新ver.：(.*)、現.*', detail)
-    if matchObj:
-        global appVer
-        appVer = matchObj.group(1)
-        print("new version: %s" % appVer)
-    else:
-        print("No matches")
-        raise Exception("update app ver failed")
+# ===== End =====
 
-
-def GetJsonFromUrl(jsonUrl):
-    data = json.loads(
-        requests.get(
-            url=
-            f"{jsonUrl}"
-        ).text)
-    return data
-
-
-#===== End =====
-
-#===== Telegram arguments =====
-TelegramBotToken = ''
-TelegramAdminId = ''
-
-
-def SendMessageToAdmin(message):
-    if (TelegramBotToken != 'nullvalue'):
-        nowtime = mytime.GetFormattedNowTime()
-        url = "https://api.telegram.org/bot%s/sendMessage?chat_id=%s&parse_mode=markdown&text=_%s_\n%s" % (
-            TelegramBotToken, TelegramAdminId, nowtime, message)
-        result = json.loads(requests.get(url).text)
-        if not result['ok']:
-            print(result)
-            print(message)
-            raise 'something wrong'
-    else:
-        SendWebhookToAdmin(message)
-
-
-#===== End =====
-
-#===== Discord Webhook =====
-WebhookUrl = '' #webhook url, from here: https://i.imgur.com/f9XnAew.png
-
-
-def SendWebhookToAdmin(message):
-    if (WebhookUrl != 'nullvalue'):
-        #for all params, see https://discordapp.com/developers/docs/resources/webhook#execute-webhook
-        data = {
-            "content" : message,
-            # "username" : "custom username"
-        }
-
-        #leave this out if you dont want an embed
-        #for all params, see https://discordapp.com/developers/docs/resources/channel#embed-object
-        # data["embeds"] = [
-            # {
-                # "description" : "text in embed",
-                # "title" : "embed title"
-            # }
-        # ]
-
-        result = requests.post(WebhookUrl, json = data)
-
-        try:
-            result.raise_for_status()
-        except requests.exceptions.HTTPError as err:
-            print(err)
-        else:
-            print("Payload delivered successfully, code {}.".format(result.status_code))
-
-        #result: https://i.imgur.com/DRqXQzA.png
-
-
-#===== End =====
-
-
-#===== Github api =====
-def UploadFileToRepo(filename, content, commit="updated"):
-    url = f"https://api.github.com/repos/{GithubName}/FGODailyBonusLog/contents/" + filename
-    res = requests.get(url=url)
-    jobject = json.loads(res.text)
-    header = {
-        "Content-Type": "application/json",
-        "User-Agent": f"{GithubName}_bot",
-        "Authorization": "token " + GithubToken
-    }
-    content = str(base64.b64encode(content.encode('utf-8')), 'utf-8')
-    form = {
-        "message": commit,
-        "committer": {
-            "name": f"{GithubName}_bot",
-            "email": "none@none.none"
-        },
-        "content": content
-    }
-    if "sha" in jobject:
-        form["sha"] = jobject["sha"]
-    form = json.dumps(form)
-    result = requests.put(url, data=form, headers=header)
-    print(result.status_code)
-
-
-#===== End =====
+user_agent_2 = os.environ.get('USER_AGENT_SECRET_2')
 
 httpheader = {
-    'Accept-Encoding': 'gzip, identity',
-    'User-Agent': UserAgent,
-    'Content-Type': 'application/x-www-form-urlencoded',
-    'Connection': 'Keep-Alive, TE',
-    'TE': 'identity'
+    'User-Agent': user_agent_2,
+    'Accept-Encoding': "deflate, gzip",
+    'Content-Type': "application/x-www-form-urlencoded",
+    'X-Unity-Version': "2022.3.28f1"
+
 }
 
 
@@ -171,10 +74,13 @@ def NewSession():
     return requests.Session()
 
 
-def PostReq(session, url, data):
-    res = session.post(url, data=data, headers=httpheader, verify=False).json()
-    if res['response'][0]['resCode'] != '00':
-        SendMessageToAdmin("[ErrorCode: %s]\n%s" %
-                           (res['response'][0]['resCode'],
-                            res['response'][0]['fail']['detail']))
+def PostReq(s, url, data):
+    res = s.post(url, data=data, headers=httpheader, verify=False).json()
+    res_code = res['response'][0]['resCode']
+
+    if res_code != '00':
+        detail = res['response'][0]['fail']['detail']
+        message = f'[ErrorCode: {res_code}]\n{detail}'
+        raise Exception(message)
+
     return res
