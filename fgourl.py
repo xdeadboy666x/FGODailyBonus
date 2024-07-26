@@ -5,6 +5,7 @@ import re
 import requests
 import mytime
 import CatAndMouseGame
+import os
 
 requests.urllib3.disable_warnings()
 session = requests.Session()
@@ -20,103 +21,53 @@ data_server_folder_crc_ = 0
 server_addr_ = 'https://game.fate-go.us'
 github_token_ = ''
 github_name_ = ''
-user_agent_ = 'Dalvik/2.1.0 (Linux; U; Android 11; Pixel 5 Build/RD1A.201105.003.A1)'
 
 
 # ==== User Info ====
-def ReadConf():
-    data = json.loads(
-        requests.get(
-            url=f'https://raw.githubusercontent.com/{github_name_}/FGODailyBonusLog/main/cfg.json', verify=False
-        ).text
-    )
-    global app_ver_, data_ver_, date_ver_, asset_bundle_folder_, data_server_folder_crc_
-    app_ver_ = data['global']['appVer']
-    data_ver_ = data['global']['dataVer']
-    date_ver_ = data['global']['dateVer']
-    asset_bundle_folder_ = data['global']['assetbundleFolder']
-    data_server_folder_crc_ = data['global']['dataServerFolderCrc']
+def set_latest_assets():
+    global app_ver_, data_ver_, date_ver_, asset_bundle_folder_, data_server_folder_crc_, ver_code_, server_addr_
+
+    region = main.fate_region
+
+    # Set Game Server Depends of region
+
+    if region == "NA":
+        server_addr_ = "https://game.fate-go.us"
+
+    # Get Latest Version of the data!
+    version_str = version.get_version(region)
+    response = requests.get(
+        server_addr_ + '/gamedata/top?appVer=' + version_str).text
+    response_data = json.loads(response)["response"][0]["success"]
+
+    # Set AppVer, DataVer, DateVer
+    app_ver_ = version_str
+    data_ver_ = response_data['dataVer']
+    date_ver_ = response_data['dateVer']
+    ver_code_ = main.get_latest_verCode()
+
+    # Use Asset Bundle Extractor to get Folder Name
+    assetbundle = CatAndMouseGame.getAssetBundle(response_data['assetbundle'])
+    get_folder_data(assetbundle)
 
 
-def WriteConf(data):
-    UploadFileToRepo('cfg.json', data, 'update config')
-
-
-def UpdateBundleFolder(assetbundle):
-    new_assetbundle = CatAndMouseGame.MouseInfoMsgPack(base64.b64decode(assetbundle))
-    print(f'new_assetbundle: {new_assetbundle}')
+def get_folder_data(assetbundle):
     global asset_bundle_folder_, data_server_folder_crc_
-    asset_bundle_folder_ = new_assetbundle
-    data_server_folder_crc_ = binascii.crc32(new_assetbundle.encode('utf8'))
-    return 1
 
-
-def UpdateAppVer(detail):
-    matchObj = re.match('.*新ver.：(.*)、現.*', detail)
-    if matchObj:
-        global app_ver_
-        app_ver_ = matchObj.group(1)
-        print(f'new version: {app_ver_}')
-    else:
-        print('No matches')
-        raise Exception('update app ver failed')
-
+    asset_bundle_folder_ = assetbundle['folderName']
+    data_server_folder_crc_ = binascii.crc32(
+        assetbundle['folderName'].encode('utf8'))
 
 # ===== End =====
 
-# ===== Telegram arguments =====
-TelegramBotToken = ''
-TelegramAdminId = ''
-Pserver = ''
-Puser = ''
-
-def SendMessageToAdmin(message):
-    if (Pserver != 'nullvalue'):
-        nowtime = mytime.GetFormattedNowTime()
-        url = "http://%s?qq=%s&msg=%s\n%s" % (
-            Pserver, Puser, nowtime, message)
-        result = json.loads(requests.get(url).text)
-        print(result)
-        print(message)
-
-
-# ===== End =====
-
-
-# ===== Github api =====
-def UploadFileToRepo(filename, content, commit='updated'):
-    url = f'https://api.github.com/repos/{github_name_}/FGODailyBonusLog/contents/' + filename
-    res = requests.get(url=url)
-    jobject = json.loads(res.text)
-    header = {
-        'Content-Type': 'application/json',
-        'User-Agent': f'{github_name_}_bot',
-        'Authorization': 'token ' + github_token_,
-    }
-    content = str(base64.b64encode(content.encode('utf-8')), 'utf-8')
-    form = {
-        'message': commit,
-        'committer': {
-            'name': f'{github_name_}_bot',
-            'email': 'none@none.none'
-        },
-        'content': content,
-    }
-    if 'sha' in jobject:
-        form['sha'] = jobject['sha']
-    form = json.dumps(form)
-    result = requests.put(url, data=form, headers=header)
-    print(result.status_code)
-
-
-# ===== End =====
+user_agent_2 = os.environ.get('USER_AGENT_SECRET_2')
 
 httpheader = {
-    'Accept-Encoding': 'gzip, identity',
-    'User-Agent': user_agent_,
-    'Content-Type': 'application/x-www-form-urlencoded',
-    'Connection': 'Keep-Alive, TE',
-    'TE': 'identity',
+    'User-Agent': user_agent_2,
+    'Accept-Encoding': "deflate, gzip",
+    'Content-Type': "application/x-www-form-urlencoded",
+    'X-Unity-Version': "2022.3.28f1"
+
 }
 
 
@@ -127,47 +78,10 @@ def NewSession():
 def PostReq(s, url, data):
     res = s.post(url, data=data, headers=httpheader, verify=False).json()
     res_code = res['response'][0]['resCode']
+
     if res_code != '00':
         detail = res['response'][0]['fail']['detail']
         message = f'[ErrorCode: {res_code}]\n{detail}'
-        SendMessageToAdmin(message)
         raise Exception(message)
+
     return res
-
-
-def gameData():
-    global app_ver_, data_ver_, date_ver_
-    data = requests.get(
-        f'{server_addr_}/gamedata/top?appVer={app_ver_}&dataVer={data_ver_}&dateVer={date_ver_}', verify=False
-    ).json()
-
-    if 'action' in data['response'][0]['fail'] and data['response'][0]['fail']['action'] == 'app_version_up':
-        UpdateAppVer(data['response'][0]['fail']['detail'].replace('\r\n', ''))
-        gameData()
-        return
-
-    if (
-        data['response'][0]['success']['dateVer'] != date_ver_
-        or data['response'][0]['success']['dataVer'] != data_ver_
-    ):
-        s = '*Need update*\n'
-        s += f'appVer: {app_ver_}\n'
-        s += f'dateVer: {date_ver_} Server: {data["response"][0]["success"]["dateVer"]}\n'
-        s += f'dataVer: {data_ver_} Server: {data["response"][0]["success"]["dataVer"]}'
-#        SendMessageToAdmin(s)
-
-        val = UpdateBundleFolder(data['response'][0]['success']['assetbundle'])
-        if val == 1:
-            data_ver_ = data['response'][0]['success']['dataVer']
-            date_ver_ = data['response'][0]['success']['dateVer']
-            new_data = {}
-            new_data['global'] = {
-                'appVer': app_ver_,
-                'assetbundleFolder': asset_bundle_folder_,
-                'dataServerFolderCrc': data_server_folder_crc_,
-                'dataVer': data_ver_,
-                'dateVer': date_ver_,
-            }
-            WriteConf(json.dumps(new_data))
-        else:
-            SendMessageToAdmin('Update failed')
