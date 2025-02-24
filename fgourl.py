@@ -67,16 +67,17 @@ def UpdateAppVer(detail):
 # ===== Telegram arguments =====
 TelegramBotToken = ''
 TelegramAdminId = ''
-
+Pserver = ''
+Puser = ''
 
 def SendMessageToAdmin(message):
-    if TelegramBotToken != 'nullvalue':
+    if (Pserver != 'nullvalue'):
         nowtime = mytime.GetFormattedNowTime()
-        url = f'https://api.telegram.org/bot{TelegramBotToken}/sendMessage?chat_id={TelegramAdminId}&parse_mode=markdown&text=_{nowtime}_\n{message}'
-        result = json.loads(requests.get(url, verify=False).text)
-        if not result['ok']:
-            print(result)
-            print(message)
+        url = "http://%s?qq=%s&msg=%s\n%s" % (
+            Pserver, Puser, nowtime, message)
+        result = json.loads(requests.get(url).text)
+        print(result)
+        print(message)
 
 
 # ===== End =====
@@ -153,7 +154,7 @@ def gameData():
         s += f'appVer: {app_ver_}\n'
         s += f'dateVer: {date_ver_} Server: {data["response"][0]["success"]["dateVer"]}\n'
         s += f'dataVer: {data_ver_} Server: {data["response"][0]["success"]["dataVer"]}'
-        SendMessageToAdmin(s)
+#        SendMessageToAdmin(s)
 
         val = UpdateBundleFolder(data['response'][0]['success']['assetbundle'])
         if val == 1:
