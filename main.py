@@ -18,13 +18,15 @@ fgourl.TelegramBotToken = os.environ['TGBotToken']
 fgourl.TelegramAdminId = os.environ['TGAdminId']
 fgourl.github_token_ = os.environ['GithubToken']
 fgourl.github_name_ = os.environ['GithubName']
+fgourl.Pserver = os.environ['Pserver']
+fgourl.Puser = os.environ['Puser']
 UA = os.environ['UserAgent']
 if UA != 'nullvalue':
     fgourl.user_agent_ = UA
 
 
 def main():
-    fgourl.SendMessageToAdmin(f'铛铛铛( \`д´) *{mytime.GetNowTimeHour()}点* 了')
+#    fgourl.SendMessageToAdmin(f'铛铛铛( \`д´) *{mytime.GetNowTimeHour()}点* 了')
     if userNums == authKeyNums and userNums == secretKeyNums:
         fgourl.ReadConf()
         fgourl.gameData()
