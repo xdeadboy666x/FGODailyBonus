@@ -100,26 +100,27 @@ class user:
         # 登陆天数
         login_days = data['cache']['updated']['userLogin'][0]['seqLoginCount']
         total_days = data['cache']['updated']['userLogin'][0]['totalLoginCount']
-        res = f'*{self.name_}*\n`登陆天数: {login_days}天 / {total_days}天\n'
+#        res = f'*{self.name_}*\n`登陆天数: {login_days}天 / {total_days}天\n'
+        res = f'登陆天数: {login_days}天 / {total_days}天\n'
 
         # 角色信息
-        res += f'等级: {lv}\n石头: {stone}\n呼符: {ticket}\n'
+        res += f'等级: {lv} 石头: {stone} 呼符: {ticket}\n'
 
         # 现有体力
         act_max = data['cache']['replaced']['userGame'][0]['actMax']
         act_recover_at = data['cache']['replaced']['userGame'][0]['actRecoverAt']
         now_act = (act_max - (act_recover_at - mytime.GetTimeStamp()) / 300)
-        res += f'体力: {now_act} / {act_max}\n'
+#        res += f'体力: {now_act} / {act_max}\n'
 
         # 友情点
         add_fp = data['response'][0]['success']['addFriendPoint']
         total_fp = data['cache']['replaced']['tblUserGame'][0]['friendPoint']
-        res += f'友情点: {add_fp} / {total_fp}`\n'
+#        res += f'友情点: {add_fp} / {total_fp}`\n'
 
         # 登陆奖励
         if 'seqLoginBonus' in data['response'][0]['success']:
             bonus_message = data['response'][0]['success']['seqLoginBonus'][0]['message']
-            res += f'*{bonus_message}*\n`'
+            res += f'*{bonus_message}*\n'
 
             for i in data['response'][0]['success']['seqLoginBonus'][0]['items']:
                 res += f'{i["name"]} X {i["num"]}\n'
@@ -127,14 +128,14 @@ class user:
             if 'campaignbonus' in data['response'][0]['success']:
                 bonus_name = data['response'][0]['success']['campaignbonus'][0]['name']
                 bonus_detail = data['response'][0]['success']['campaignbonus'][0]['detail']
-                res += f'`*{bonus_name}*\n*{bonus_detail}*\n`'
+                res += f'*{bonus_name}*\n*{bonus_detail}*\n'
 
                 for i in data['response'][0]['success']['campaignbonus'][0]['items']:
                     res += f'{i["name"]} X {i["num"]}\n'
-            res += '`'
+#            res += '`'
 
         server_now_time = mytime.TimeStampToString(data['cache']['serverTime'])
-        res += f'_{server_now_time}_\n--------\n'
+#        res += f'_{server_now_time}_\n--------\n'
         print(res)
         return res
 
