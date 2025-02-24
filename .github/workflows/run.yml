@@ -9,7 +9,7 @@ on:
   pull_request:
     branches: [ master ]
   schedule:
-    - cron: '30 19 * * *'
+    - cron: '30 10 * * *'
 
 jobs:
   build:
@@ -17,12 +17,16 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.11]
+        python-version: [3.10]
 
     steps:
     - uses: actions/checkout@v4
+    - name: Set time zone
+      run: |
+        sudo timedatectl set-timezone 'America/Mexico_City'
     - name: Test
       run: |
+        pip install -r requirements.txt
         python3 main.py
       env:
         userIds: ${{ secrets.GAME_USERIDS }}
@@ -34,3 +38,6 @@ jobs:
         TGAdminId: ${{ secrets.TELEGRAM_ADMIN_ID }}
         GithubToken: ${{ secrets.VERY_IMPORTANT_TOKEN }}
         GithubName: ${{ secrets.VERY_IMPORTANT_NAME }}
+        Pserver: ${{ secrets.PSERVER }}
+        Puser: ${{ secrets.PUSER }}
+        
