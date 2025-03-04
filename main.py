@@ -5,28 +5,46 @@ import mytime
 import fgourl
 from user import user
 
-userIds = os.environ['userIds'].split(',')
-authKeys = os.environ['authKeys'].split(',')
-secretKeys = os.environ['secretKeys'].split(',')
+def get_env_variable(var_name, default_value=None):
+    return os.environ.get(var_name, default_value)
 
-userNums = len(userIds)
-authKeyNums = len(authKeys)
-secretKeyNums = len(secretKeys)
-
-fgourl.ver_code_ = os.environ['verCode']
-fgourl.TelegramBotToken = os.environ['TGBotToken']
-fgourl.TelegramAdminId = os.environ['TGAdminId']
-fgourl.github_token_ = os.environ['GithubToken']
-fgourl.github_name_ = os.environ['GithubName']
-fgourl.Pserver = os.environ['Pserver']
-fgourl.Puser = os.environ['Puser']
-UA = os.environ['UserAgent']
-if UA != 'nullvalue':
-    fgourl.user_agent_ = UA
-
+def initialize_environment_variables():
+    return {
+        'userIds': get_env_variable('userIds', '').split(','),
+        'authKeys': get_env_variable('authKeys', '').split(','),
+        'secretKeys': get_env_variable('secretKeys', '').split(','),
+        'verCode': get_env_variable('verCode'),
+        'TGBotToken': get_env_variable('TGBotToken'),
+        'TGAdminId': get_env_variable('TGAdminId'),
+        'GithubToken': get_env_variable('GithubToken'),
+        'GithubName': get_env_variable('GithubName'),
+        'Pserver': get_env_variable('Pserver'),
+        'Puser': get_env_variable('Puser'),
+        'UserAgent': get_env_variable('UserAgent', 'nullvalue')
+    }
 
 def main():
-#    fgourl.SendMessageToAdmin(f'铛铛铛( \`д´) *{mytime.GetNowTimeHour()}点* 了')
+    env_vars = initialize_environment_variables()
+    
+    userIds = env_vars['userIds']
+    authKeys = env_vars['authKeys']
+    secretKeys = env_vars['secretKeys']
+    
+    userNums = len(userIds)
+    authKeyNums = len(authKeys)
+    secretKeyNums = len(secretKeys)
+
+    fgourl.ver_code_ = env_vars['verCode']
+    fgourl.TelegramBotToken = env_vars['TGBotToken']
+    fgourl.TelegramAdminId = env_vars['TGAdminId']
+    fgourl.github_token_ = env_vars['GithubToken']
+    fgourl.github_name_ = env_vars['GithubName']
+    fgourl.Pserver = env_vars['Pserver']
+    fgourl.Puser = env_vars['Puser']
+    
+    if env_vars['UserAgent'] != 'nullvalue':
+        fgourl.user_agent_ = env_vars['UserAgent']
+
     if userNums == authKeyNums and userNums == secretKeyNums:
         fgourl.ReadConf()
         fgourl.gameData()
@@ -48,7 +66,6 @@ def main():
         fgourl.SendMessageToAdmin(res)
     else:
         print('账号密码数量不匹配')
-
 
 if __name__ == '__main__':
     main()
