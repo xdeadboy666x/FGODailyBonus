@@ -22,7 +22,6 @@ github_token_ = ''
 github_name_ = ''
 user_agent_ = 'Dalvik/2.1.0 (Linux; U; Android 11; Pixel 5 Build/RD1A.201105.003.A1)'
 
-
 # ==== User Info ====
 def ReadConf():
     data = json.loads(
@@ -37,10 +36,8 @@ def ReadConf():
     asset_bundle_folder_ = data['global']['assetbundleFolder']
     data_server_folder_crc_ = data['global']['dataServerFolderCrc']
 
-
 def WriteConf(data):
     UploadFileToRepo('cfg.json', data, 'update config')
-
 
 def UpdateBundleFolder(assetbundle):
     new_assetbundle = CatAndMouseGame.MouseInfoMsgPack(base64.b64decode(assetbundle))
@@ -49,7 +46,6 @@ def UpdateBundleFolder(assetbundle):
     asset_bundle_folder_ = new_assetbundle
     data_server_folder_crc_ = binascii.crc32(new_assetbundle.encode('utf8'))
     return 1
-
 
 def UpdateAppVer(detail):
     matchObj = re.match('.*新ver.：(.*)、現.*', detail)
@@ -60,7 +56,6 @@ def UpdateAppVer(detail):
     else:
         print('No matches')
         raise Exception('update app ver failed')
-
 
 # ===== End =====
 
@@ -79,9 +74,7 @@ def SendMessageToAdmin(message):
         print(result)
         print(message)
 
-
 # ===== End =====
-
 
 # ===== Github api =====
 def UploadFileToRepo(filename, content, commit='updated'):
@@ -108,7 +101,6 @@ def UploadFileToRepo(filename, content, commit='updated'):
     result = requests.put(url, data=form, headers=header)
     print(result.status_code)
 
-
 # ===== End =====
 
 httpheader = {
@@ -119,10 +111,8 @@ httpheader = {
     'TE': 'identity',
 }
 
-
 def NewSession():
     return requests.Session()
-
 
 def PostReq(s, url, data):
     res = s.post(url, data=data, headers=httpheader, verify=False).json()
@@ -133,7 +123,6 @@ def PostReq(s, url, data):
         SendMessageToAdmin(message)
         raise Exception(message)
     return res
-
 
 def gameData():
     global app_ver_, data_ver_, date_ver_
